@@ -1,33 +1,36 @@
-import mongoose from "mongoose";
-
-const { Schema, model } = mongoose;
-
-const variantSchema = new Schema(
-  {
-    label: { type: String, required: true },
-    unit: { type: String, required: true },
-    price: { type: Number, required: true },
-    cutPrice: { type: Number, default: 0 },
-    discount: { type: Number, default: 0 },
-    qty_step: { type: Number, default: 1 },
-    stock: { type: Number, default: 0 },
-  },
-  { _id: false } // আলাদা _id generate না করার জন্য
-);
+import { Schema, model } from "mongoose";
 
 const productSchema = new Schema(
   {
-    name: { type: String, required: true },
-    category: { type: String, required: true }, // তুমি Number দিয়েছিলে, কিন্তু example এ String আছে
-    subCategory: { type: String, default: "" },
-    defaultUnit: { type: String, required: true },
-    variants: [variantSchema],
-    img: { type: String, required: true },
+    name: { type: String, required: true }, // পণ্যের নাম
+    category: { type: String, required: true }, // e.g. Food, Grocery
+    subCategory: { type: String }, // optional
+    defaultUnit: { type: String, required: true }, // e.g. piece, plate, kg
+    variants: [
+      {
+        label: String, // e.g. 1 প্লেট, 500 gm
+        unit: String, // e.g. plate, gm
+        price: Number,
+        cutPrice: Number,
+        discount: Number,
+        qty_step: Number,
+        stock: Number,
+      },
+    ],
+    img: { type: String }, // image URL
+    shop: {
+      // কোন shop এর product
+      type: Schema.Types.ObjectId,
+      ref: "Shop",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["active", "Inactive"],
+      default: "Inactive",
+    },
   },
-  {
-    versionKey: false,
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 const Product = model("Product", productSchema);

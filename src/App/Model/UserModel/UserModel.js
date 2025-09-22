@@ -10,6 +10,11 @@ const userSchema = new Schema(
       enum: ["customer", "rider", "seller", "admin"],
       default: "customer",
     },
+    status: {
+      type: String,
+      enum: ["active", "Inactive"],
+      default: "active",
+    },
   },
   {
     versionKey: false,

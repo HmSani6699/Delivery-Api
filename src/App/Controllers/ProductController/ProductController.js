@@ -1,29 +1,37 @@
 import express from "express";
 import Product from "../../Model/ProductModel/ProductModel.js";
+import Shop from "../../Model/ShopModel/ShopModel.js";
 
 export const productRouter = express.Router();
 
-// Create a Product
+// Add Product
 productRouter.post("/products", async (req, res) => {
   const productBody = req.body;
 
   try {
-    const product = new Product(productBody);
+    // Shop আছে কিনা check
+    const shop = await Shop.findById(productBody.shop);
+    if (!shop) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid shop ID",
+      });
+    }
 
+    const product = new Product(productBody);
     await product.save();
 
-    res.status(200).json({
-      sussecc: true,
-      message: "Product Added successfully ..!",
-      product: productBody,
+    res.status(201).json({
+      success: true,
+      message: "Product added successfully!",
+      data: product,
     });
   } catch (error) {
-    console.log(error);
-
-    res.status(400).json({
+    console.error(error);
+    res.status(500).json({
       success: false,
-      message: "Product not created",
-      error: error.errors,
+      message: "Failed to add product",
+      error: error.message,
     });
   }
 });

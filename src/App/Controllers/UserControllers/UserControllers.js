@@ -1,6 +1,8 @@
 import express from "express";
 import User from "../../Model/UserModel/UserModel.js";
 import bcrypt from "bcryptjs";
+import Shop from "../../Model/ShopModel/ShopModel.js";
+import Product from "../../Model/ProductModel/ProductModel.js";
 
 export const userRouter = express.Router();
 
@@ -79,90 +81,101 @@ userRouter.post("/login", async (req, res) => {
 });
 
 // Get all Products
-userRouter.get("/products", async (req, res) => {
+userRouter.get("/users", async (req, res) => {
   try {
-    const products = await Product.find();
+    const user = await User.find();
 
     res.status(200).json({
       sussecc: true,
-      message: "Get all products  successfully ..!",
-      data: products,
+      message: "Get all user  successfully ..!",
+      data: user,
     });
   } catch (error) {
     console.log(error);
 
     res.status(400).json({
       success: false,
-      message: "Product not Found!",
+      message: "users not Found!",
       error: error.errors,
     });
   }
 });
 
-// Get a single Products
-userRouter.get("/products/:productId", async (req, res) => {
-  const id = req.params.productId;
+// Get a single User
+userRouter.get("/users/:userId", async (req, res) => {
+  const id = req.params.userId;
   try {
-    const product = await Product.findById(id);
+    const user = await User.findById(id);
 
     res.status(200).json({
       sussecc: true,
-      message: "Get a single product  successfully ..!",
-      data: product,
+      message: "Get a single User  successfully ..!",
+      data: user,
     });
   } catch (error) {
     console.log(error);
     res.status(400).json({
       success: false,
-      message: "Product not Found!",
+      message: "User not Found!",
       error: error.errors,
     });
   }
 });
 
-// Update a single Products
-userRouter.put("/products/:productId", async (req, res) => {
-  const id = req.params.productId;
+// Update a single users
+userRouter.put("/users/:userId", async (req, res) => {
+  const id = req.params.userId;
   const updateBody = req.body;
   try {
-    const product = await Product.findByIdAndUpdate(id, updateBody, {
+    const user = await User.findByIdAndUpdate(id, updateBody, {
       new: true,
     });
 
     res.status(200).json({
       sussecc: true,
-      message: "Update a single product  successfully ..!",
-      product: product,
+      message: "Update a single user  successfully ..!",
+      user: user,
     });
   } catch (error) {
     console.log(error);
     res.status(400).json({
       success: false,
-      message: "Product not Found!",
+      message: "User not Found!",
       error: error.errors,
     });
   }
 });
 
-// Delete a single Products
-userRouter.delete("/products/:productId", async (req, res) => {
-  const id = req.params.productId;
+// Delete a single users
+userRouter.delete("/users/:userId", async (req, res) => {
+  const id = req.params.userId;
 
   try {
-    await Product.findByIdAndDelete(id, {
-      new: true,
-    });
+    // 1. user আছে কিনা চেক করো
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found 444" });
+    }
 
-    res.status(200).json({
-      sussecc: true,
-      message: "Delete a single product  successfully ..!",
-      product: product,
-    });
+    // 2. user's shops খুঁজে delete করো
+    const shops = await Shop.find({ owner: id });
+    for (const shop of shops) {
+      // প্রতিটা shop এর products delete
+      await Product.deleteMany({ shop: shop._id });
+    }
+
+    // shops delete
+    await Shop.deleteMany({ owner: id });
+
+    // 3. user delete
+    await User.findByIdAndDelete(id);
+
+    res.json({ success: true, message: "User and all related data deleted!" });
   } catch (error) {
     console.log(error);
     res.status(400).json({
       success: false,
-      message: "Product not Found!",
+      message: "user not Found!  22",
       error: error.errors,
     });
   }
