@@ -26,11 +26,14 @@ const productSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["active", "Inactive"],
-      default: "Inactive",
+      enum: ["active", "inactive"],
+      default: "inactive",
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    versionKey: false,
+  }
 );
 
 const Product = model("Product", productSchema);

@@ -1,30 +1,51 @@
 import express from "express";
 import Product from "../../Model/ProductModel/ProductModel.js";
 import Shop from "../../Model/ShopModel/ShopModel.js";
+import User from "../../Model/UserModel/UserModel.js";
 
 export const productRouter = express.Router();
 
 // Add Product
 productRouter.post("/products", async (req, res) => {
-  const productBody = req.body;
+  const { name, category, subCategory, defaultUnit, variants, phone, img } =
+    req.body;
 
   try {
-    // Shop আছে কিনা check
-    const shop = await Shop.findById(productBody.shop);
-    if (!shop) {
-      return res.status(400).json({
+    // Step 1: User খুঁজে বের করো
+    const getUser = await User.findOne({ phone: phone });
+    if (!getUser) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid shop ID",
+        message: "User not found",
       });
     }
 
-    const product = new Product(productBody);
+    // Step 2: User এর shop খুঁজো
+    const getShop = await Shop.findOne({ owner: getUser._id });
+    if (!getShop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found for this user",
+      });
+    }
+
+    // Step 3: Product বানাও (shop reference সহ)
+    const product = new Product({
+      name,
+      category,
+      subCategory,
+      defaultUnit,
+      variants,
+      img,
+      shop: getShop._id,
+    });
+
     await product.save();
 
     res.status(201).json({
       success: true,
       message: "Product added successfully!",
-      data: product,
+      // data: product,
     });
   } catch (error) {
     console.error(error);
@@ -40,6 +61,47 @@ productRouter.post("/products", async (req, res) => {
 productRouter.get("/products", async (req, res) => {
   try {
     const products = await Product.find();
+
+    res.status(200).json({
+      sussecc: true,
+      message: "Get all products  successfully ..!",
+      data: products,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(400).json({
+      success: false,
+      message: "Product not Found!",
+      error: error.errors,
+    });
+  }
+});
+
+// Get all Products by seller
+productRouter.get("/products/seller/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Step 1: User খুঁজে বের করো
+    const getUser = await User.findOne({ phone: id });
+    if (!getUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Step 2: User এর shop খুঁজো
+    const getShop = await Shop.findOne({ owner: getUser._id });
+    if (!getShop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found for this user",
+      });
+    }
+
+    const products = await Product.find({ shop: getShop._id });
 
     res.status(200).json({
       sussecc: true,
@@ -114,7 +176,6 @@ productRouter.delete("/products/:productId", async (req, res) => {
     res.status(200).json({
       sussecc: true,
       message: "Delete a single product  successfully ..!",
-      product: product,
     });
   } catch (error) {
     console.log(error);
