@@ -7,19 +7,35 @@ const shopSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }, // যিনি owner (seller user)
-    phone: { type: String },
-    address: { type: String },
+    }, // owner user এর ObjectId
 
-    // Future expandable fields
+    phone: { type: String, required: true }, // দোকানের ফোন নম্বর
+    address: { type: String, required: true },
+
     description: { type: String },
-    logo: { type: String }, // shop logo / image URL
-    coverImage: { type: String }, // banner
+
+    logo: { type: String }, // shop logo image url/path
+    coverImage: { type: String }, // banner image url/path
+
+    // তুমি ১, ২ দিয়ে পাঠাচ্ছো কিন্তু schema-তে String রেখেছো তাই আমরা enum দিয়ে বানাবো
+    shopType: {
+      type: String,
+      enum: ["1", "2"], // 1 = Restaurant, 2 = Grocery (যেমন তুমি পাঠাচ্ছো)
+      required: true,
+    },
+
     status: {
       type: String,
-      enum: ["pending", "approved", "blocked"],
-      default: "approved",
-    }, // super admin shop verify করতে পারবে
+      enum: ["1", "2", "3"], // 1 = pending, 2 = approved, 3 = blocked
+      default: "2",
+      required: true,
+    },
+
+    sharePricing: {
+      type: Map,
+      of: String,
+      required: false,
+    },
   },
   { timestamps: true }
 );

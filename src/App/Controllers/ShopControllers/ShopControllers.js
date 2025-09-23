@@ -1,15 +1,42 @@
 import express from "express";
 import Shop from "../../Model/ShopModel/ShopModel.js";
 import User from "../../Model/UserModel/UserModel.js";
+import bcrypt from "bcryptjs";
 
 export const shopRouter = express.Router();
 
 shopRouter.post("/shops", async (req, res) => {
-  const { name, owner, phone, address } = req.body;
+  const {
+    ownerName,
+    ownerPhone,
+    ownerPassword,
+    name,
+    phone,
+    address,
+    logo,
+    coverImage,
+    shopType,
+    status,
+    description,
+    sharePricing,
+  } = req.body;
 
   try {
+    // Password bcrypt
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(ownerPassword, salt);
+
+    // Create user
+    const user = new User({
+      name: ownerName,
+      phone: ownerPhone,
+      password: passwordHash,
+      role: "seller",
+    });
+    await user.save();
+
     // owner অবশ্যই seller হতে হবে
-    const seller = await User.findById(owner);
+    const seller = await User.findOne({ phone: ownerPhone });
 
     if (!seller || seller.role !== "seller") {
       return res.status(400).json({
@@ -18,7 +45,18 @@ shopRouter.post("/shops", async (req, res) => {
       });
     }
 
-    const shop = new Shop({ name, owner, phone, address });
+    const shop = new Shop({
+      name,
+      owner: seller?._id,
+      phone,
+      address,
+      logo,
+      coverImage,
+      shopType,
+      status,
+      description,
+      sharePricing,
+    });
     await shop.save();
 
     res.status(201).json({
@@ -39,12 +77,13 @@ shopRouter.post("/shops", async (req, res) => {
 // Get all Shop
 shopRouter.get("/shops", async (req, res) => {
   try {
-    const shop = await Shop.find();
+    // const shops = await Shop.find().populate("owner", "ownerName ownerPhone");
+    const shops = await Shop.find().populate("owner", "name");
 
     res.status(200).json({
       sussecc: true,
       message: "Get all shop  successfully ..!",
-      data: shop,
+      data: shops,
     });
   } catch (error) {
     console.log(error);
