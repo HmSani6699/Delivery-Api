@@ -5,6 +5,7 @@ const productSchema = new Schema(
     name: { type: String, required: true }, // পণ্যের নাম
     category: { type: String, required: true }, // e.g. Food, Grocery
     subCategory: { type: String }, // optional
+    productCategory: { type: String }, // optional
     defaultUnit: { type: String, required: true }, // e.g. piece, plate, kg
     variants: [
       {
