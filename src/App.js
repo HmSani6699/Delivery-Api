@@ -4,6 +4,7 @@ import { productRouter } from "./App/Controllers/ProductController/ProductContro
 import { userRouter } from "./App/Controllers/UserControllers/UserControllers.js";
 import { shopRouter } from "./App/Controllers/ShopControllers/ShopControllers.js";
 import { mainCategoryRouter } from "./App/Controllers/CategoryControllers/MainCategoryControllers.js";
+import { subCategoryRouter } from "./App/Controllers/CategoryControllers/SubCategoryControllers.js";
 const app = express();
 
 app.use(express.json());
@@ -14,6 +15,7 @@ app.use("/api", productRouter);
 app.use("/api", userRouter);
 app.use("/api", shopRouter);
 app.use("/api", mainCategoryRouter);
+app.use("/api", subCategoryRouter);
 
 // এইটা কাজ করবে: http://localhost:3000/
 app.get("/", (req, res) => {

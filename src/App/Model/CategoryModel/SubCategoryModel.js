@@ -17,7 +17,7 @@ const SubCategorySchema = new Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 const SubCategory = model("SubCategory", SubCategorySchema);

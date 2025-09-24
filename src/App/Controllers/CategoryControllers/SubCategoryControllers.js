@@ -1,14 +1,14 @@
 import express from "express";
-import MainCategory from "../../Model/CategoryModel/MainCategoryModel.js";
+import SubCategory from "../../Model/CategoryModel/SubCategoryModel.js";
 
-export const mainCategoryRouter = express.Router();
+export const subCategoryRouter = express.Router();
 
 // Create main category
-mainCategoryRouter.post("/mainCategoryes", async (req, res) => {
+subCategoryRouter.post("/subCategoryes", async (req, res) => {
   const reqBody = req?.body;
 
   try {
-    const category = new MainCategory(reqBody);
+    const category = new SubCategory(reqBody);
 
     await category.save();
 
@@ -28,9 +28,9 @@ mainCategoryRouter.post("/mainCategoryes", async (req, res) => {
 });
 
 // Get main category
-mainCategoryRouter.get("/mainCategoryes", async (req, res) => {
+subCategoryRouter.get("/subCategoryes", async (req, res) => {
   try {
-    const category = await MainCategory.find();
+    const category = await SubCategory.find();
 
     res.status(201).json({
       success: true,
@@ -48,11 +48,11 @@ mainCategoryRouter.get("/mainCategoryes", async (req, res) => {
 });
 
 // Get single main category
-mainCategoryRouter.get("/mainCategoryes/:id", async (req, res) => {
+subCategoryRouter.get("/subCategoryes/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await MainCategory.findById(id);
+    const category = await SubCategory.findById(id);
 
     res.status(201).json({
       success: true,
@@ -70,12 +70,12 @@ mainCategoryRouter.get("/mainCategoryes/:id", async (req, res) => {
 });
 
 // update main category
-mainCategoryRouter.put("/mainCategoryes/:id", async (req, res) => {
+subCategoryRouter.put("/subCategoryes/:id", async (req, res) => {
   const { id } = req.params;
   const updateBody = req.body;
 
   try {
-    const category = await MainCategory.findByIdAndUpdate(id, updateBody);
+    const category = await SubCategory.findByIdAndUpdate(id, updateBody);
 
     res.status(201).json({
       success: true,
@@ -93,11 +93,11 @@ mainCategoryRouter.put("/mainCategoryes/:id", async (req, res) => {
 });
 
 // Delete main category
-mainCategoryRouter.delete("/mainCategoryes/:id", async (req, res) => {
+subCategoryRouter.delete("/subCategoryes/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await MainCategory.findByIdAndDelete(id);
+    const category = await SubCategory.findByIdAndDelete(id);
 
     res.status(201).json({
       success: true,
