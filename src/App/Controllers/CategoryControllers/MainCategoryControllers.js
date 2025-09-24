@@ -19,10 +19,10 @@ mainCategoryRouter.post("/mainCategoryes", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: "Failed to add Category",
-      error: error.message,
+      message: error.message,
+      error: error.errors,
     });
   }
 });
