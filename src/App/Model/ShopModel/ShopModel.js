@@ -20,14 +20,14 @@ const shopSchema = new Schema(
     // তুমি ১, ২ দিয়ে পাঠাচ্ছো কিন্তু schema-তে String রেখেছো তাই আমরা enum দিয়ে বানাবো
     shopType: {
       type: String,
-      enum: ["1", "2"], // 1 = Restaurant, 2 = Grocery (যেমন তুমি পাঠাচ্ছো)
+      enum: ["Restaurant", "Grocery"], // 1 = Restaurant, 2 = Grocery (যেমন তুমি পাঠাচ্ছো)
       required: true,
     },
 
     status: {
       type: String,
-      enum: ["1", "2", "3"], // 1 = pending, 2 = approved, 3 = blocked
-      default: "2",
+      enum: ["approved", "pending", "blocked"], // 1 = pending, 2 = approved, 3 = blocked
+      default: "approved",
       required: true,
     },
 

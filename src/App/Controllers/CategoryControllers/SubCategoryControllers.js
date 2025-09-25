@@ -113,3 +113,33 @@ subCategoryRouter.delete("/subCategoryes/:id", async (req, res) => {
     });
   }
 });
+
+// Get add item sub cetegory
+subCategoryRouter.get(
+  "/subCategoryesByMainCategoryId/:mainCategoryId",
+  async (req, res) => {
+    const { mainCategoryId } = req.params;
+    try {
+      const subCategories = await SubCategory.find(
+        { mainCategory: mainCategoryId },
+        {
+          name: 1,
+          _id: 1,
+        }
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Category get successfully!",
+        data: subCategories,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to add Category",
+        error: error.message,
+      });
+    }
+  }
+);

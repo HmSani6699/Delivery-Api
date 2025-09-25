@@ -113,3 +113,33 @@ productCategoryRouter.delete("/productCategoryes/:id", async (req, res) => {
     });
   }
 });
+
+// Get add item sub cetegory
+productCategoryRouter.get(
+  "/productCategoryesByMainCategoryIdSubcategoryId/:mainCategoryId/:subCategoryId",
+  async (req, res) => {
+    const { mainCategoryId, subCategoryId } = req.params;
+    try {
+      const subCategories = await ProductCategory.find(
+        { subCategory: subCategoryId, mainCategory: mainCategoryId },
+        {
+          name: 1,
+          _id: 1,
+        }
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Category get successfully!",
+        data: subCategories,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to add Category",
+        error: error.message,
+      });
+    }
+  }
+);
