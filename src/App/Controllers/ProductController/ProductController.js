@@ -2,13 +2,22 @@ import express from "express";
 import Product from "../../Model/ProductModel/ProductModel.js";
 import Shop from "../../Model/ShopModel/ShopModel.js";
 import User from "../../Model/UserModel/UserModel.js";
+import MainCategory from "../../Model/CategoryModel/MainCategoryModel.js";
 
 export const productRouter = express.Router();
 
 // Add Product
 productRouter.post("/products", async (req, res) => {
-  const { name, category, subCategory, defaultUnit, variants, phone, img } =
-    req.body;
+  const {
+    name,
+    category,
+    subCategory,
+    productCategory,
+    defaultUnit,
+    variants,
+    phone,
+    img,
+  } = req.body;
 
   try {
     // Step 1: User খুঁজে বের করো
@@ -34,6 +43,7 @@ productRouter.post("/products", async (req, res) => {
       name,
       category,
       subCategory,
+      productCategory,
       defaultUnit,
       variants,
       img,
@@ -183,6 +193,56 @@ productRouter.delete("/products/:productId", async (req, res) => {
       success: false,
       message: "Product not Found!",
       error: error.errors,
+    });
+  }
+});
+
+// Get Restaurant item
+productRouter.get("/restaurantsItems", async (req, res) => {
+  try {
+    const { productCategory } = req.query;
+
+    // Step 1: Find "Restaurant" main category
+    const mainCategory = await MainCategory.findOne({ name: "Restaurant" });
+    if (!mainCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant main category not found",
+      });
+    }
+
+    // Step 2: Build filter
+    const filter = {
+      category: mainCategory._id,
+      status: "active",
+    };
+
+    if (productCategory) {
+      filter.productCategory = productCategory; // filter by productCategory name
+    }
+
+    // Step 3: Get products
+    const products = await Product.find(filter).populate("shop", "name logo");
+
+    // Step 4: Get used productCategory list from Product model
+    const usedCategories = await Product.distinct("productCategory", {
+      category: mainCategory._id,
+      status: "active",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Get all products successfully!",
+      data: products,
+      usedProductCategories: usedCategories, // ⬅️ This is your needed tab list
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(400).json({
+      success: false,
+      message: "Product not Found!",
+      error: error.message,
     });
   }
 });
