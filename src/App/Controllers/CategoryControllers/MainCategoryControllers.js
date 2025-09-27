@@ -81,27 +81,91 @@ mainCategoryRouter.get("/mainCategoryes/:id", async (req, res) => {
 });
 
 // update main category
-mainCategoryRouter.put("/mainCategoryes/:id", async (req, res) => {
-  const { id } = req.params;
-  const updateBody = req.body;
+// mainCategoryRouter.put(
+//   "/mainCategoryes/:id",
+//   upload.single("icon"),
+//   async (req, res) => {
+//     const { id } = req.params;
+//      const { name } = req.body;
+//      const image = req.file ? req.file.filename : null;
 
-  try {
-    const category = await MainCategory.findByIdAndUpdate(id, updateBody);
+//     try {
+//       const category = await MainCategory.findByIdAndUpdate(id, updateBody);
 
-    res.status(201).json({
-      success: true,
-      message: "Category update successfully!",
-      data: category,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add Category",
-      error: error.message,
-    });
+//       res.status(201).json({
+//         success: true,
+//         message: "Category update successfully!",
+//         data: category,
+//       });
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({
+//         success: false,
+//         message: "Failed to add Category",
+//         error: error.message,
+//       });
+//     }
+//   }
+// );
+
+mainCategoryRouter.put(
+  "/mainCategoryes/:id",
+  upload.single("icon"),
+  async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    // যদি নতুন image থাকে
+    const newImage = req.file ? req.file.filename : null;
+
+    try {
+      // 1. পুরানো category খুঁজে বের করো
+      const oldCategory = await MainCategory.findById(id);
+      if (!oldCategory) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Category not found" });
+      }
+
+      let finalImage = oldCategory.icon;
+
+      // 2. যদি নতুন image থাকে, পুরানো delete করে নতুন set করো
+      if (newImage) {
+        if (oldProduct.img) {
+          const oldPath = path.join(process.cwd(), "uploads", oldProduct.img);
+          if (fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath); // পুরানো ফাইল delete
+          }
+        }
+        finalImage = newImage;
+      }
+
+      // 3. Update body তৈরি করো
+      const updateBody = {
+        name: name || oldCategory.name,
+        icon: finalImage || oldCategory.icon, // যদি নতুন image না আসে তাহলে পুরানোটাই রাখবে
+      };
+
+      // 4. Database এ update করো
+      const category = await MainCategory.findByIdAndUpdate(id, updateBody, {
+        new: true,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Category updated successfully!",
+        data: category,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update Category",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 // Delete main category
 mainCategoryRouter.delete("/mainCategoryes/:id", async (req, res) => {

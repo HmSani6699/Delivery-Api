@@ -12,6 +12,9 @@ const SubCategorySchema = new Schema(
       ref: "MainCategory",
       required: true,
     },
+    icon: {
+      type: String, // Optional icon/image for the category
+    },
     isActive: {
       type: Boolean,
       default: true,

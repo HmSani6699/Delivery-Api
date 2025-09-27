@@ -3,11 +3,14 @@ import Product from "../../Model/ProductModel/ProductModel.js";
 import Shop from "../../Model/ShopModel/ShopModel.js";
 import User from "../../Model/UserModel/UserModel.js";
 import MainCategory from "../../Model/CategoryModel/MainCategoryModel.js";
+import { upload } from "../../../middleware/upload.js";
+import fs from "fs";
+import path from "path";
 
 export const productRouter = express.Router();
 
 // Add Product
-productRouter.post("/products", async (req, res) => {
+productRouter.post("/products", upload.single("img"), async (req, res) => {
   const {
     name,
     category,
@@ -16,8 +19,20 @@ productRouter.post("/products", async (req, res) => {
     defaultUnit,
     variants,
     phone,
-    img,
   } = req.body;
+
+  const img = req.file ? req.file.filename : null;
+
+  const formData = {
+    name,
+    category,
+    subCategory,
+    productCategory,
+    defaultUnit,
+    variants,
+    phone,
+    img,
+  };
 
   try {
     // Step 1: User খুঁজে বের করো
@@ -40,13 +55,7 @@ productRouter.post("/products", async (req, res) => {
 
     // Step 3: Product বানাও (shop reference সহ)
     const product = new Product({
-      name,
-      category,
-      subCategory,
-      productCategory,
-      defaultUnit,
-      variants,
-      img,
+      ...formData,
       shop: getShop._id,
     });
 
@@ -151,48 +160,192 @@ productRouter.get("/products/:productId", async (req, res) => {
 });
 
 // Update a single Products
-productRouter.put("/products/:productId", async (req, res) => {
-  const id = req.params.productId;
-  const updateBody = req.body;
-  try {
-    const product = await Product.findByIdAndUpdate(id, updateBody, {
-      new: true,
-    });
+// productRouter.put(
+//   "/products/:productId",
+//   upload.single("img"),
+//   async (req, res) => {
+//     const id = req.params.productId;
+//     const {
+//       name,
+//       category,
+//       subCategory,
+//       productCategory,
+//       defaultUnit,
+//       variants,
+//       phone,
+//     } = req.body;
 
-    res.status(200).json({
-      sussecc: true,
-      message: "Update a single product  successfully ..!",
-      product: product,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({
-      success: false,
-      message: "Product not Found!",
-      error: error.errors,
-    });
+//     const img = req.file ? req.file.filename : null;
+
+//     try {
+//       // Step 2: User এর shop খুঁজো
+
+//       // const getShop = await Shop.findOne({ owner: getUser._id });
+//       // if (!getShop) {
+//       //   return res.status(404).json({
+//       //     success: false,
+//       //     message: "Shop not found for this user",
+//       //   });
+//       // }
+
+//       // 1. পুরানো product খুঁজে বের করো
+//       const oldProduct = await Product.findById(id);
+//       if (!oldProduct) {
+//         return res
+//           .status(404)
+//           .json({ success: false, message: "Product not found" });
+//       }
+
+//       // 2. নতুন image থাকলে পুরানো image delete করো
+//       if (img && oldProduct.img) {
+//         const oldPath = path.join(process.cwd(), "uploads", oldProduct.img);
+//         if (fs.existsSync(oldPath)) {
+//           fs.unlinkSync(oldPath); // পুরানো ফাইল delete
+//         }
+//       }
+
+//       const formData = {
+//         name,
+//         category,
+//         subCategory,
+//         productCategory,
+//         defaultUnit,
+//         variants,
+//         phone,
+//         img,
+//         // shop: getShop._id,
+//       };
+
+//       // const product = await Product.findByIdAndUpdate(id, formData, {
+//       //   new: true,
+//       // });
+
+//       console.log(formData);
+
+//       res.status(200).json({
+//         success: true,
+//         message: "Update a single product  successfully ..!",
+//         product: product,
+//       });
+//     } catch (error) {
+//       console.log(error);
+//       res.status(400).json({
+//         success: false,
+//         message: "Product not Found!",
+//         error: error.errors,
+//       });
+//     }
+//   }
+// );
+
+productRouter.put(
+  "/products/:productId",
+  upload.single("img"),
+  async (req, res) => {
+    const id = req.params.productId;
+    const {
+      name,
+      category,
+      subCategory,
+      productCategory,
+      defaultUnit,
+      variants,
+      phone,
+    } = req.body;
+
+    // যদি নতুন image থাকে
+    const newImage = req.file ? req.file.filename : null;
+
+    try {
+      // 1. পুরানো product খুঁজে বের করো
+      const oldProduct = await Product.findById(id);
+      if (!oldProduct) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
+      }
+
+      let finalImage = oldProduct.img;
+
+      // 2. যদি নতুন image থাকে, পুরানো delete করে নতুন set করো
+      if (newImage) {
+        if (oldProduct.img) {
+          const oldPath = path.join(process.cwd(), "uploads", oldProduct.img);
+          if (fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath); // পুরানো ফাইল delete
+          }
+        }
+        finalImage = newImage;
+      }
+
+      // 3. formData বানাও
+      const formData = {
+        name,
+        category,
+        subCategory,
+        productCategory,
+        defaultUnit,
+        variants,
+        phone,
+        img: finalImage, // ✅ পুরানো বা নতুন যেটা valid
+      };
+
+      // 4. update query চালাও
+      const product = await Product.findByIdAndUpdate(id, formData, {
+        new: true,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Product updated successfully!",
+        product,
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({
+        success: false,
+        message: "Failed to update product",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
-// Delete a single Products
+// Delete a single Product
 productRouter.delete("/products/:productId", async (req, res) => {
   const id = req.params.productId;
 
   try {
-    await Product.findByIdAndDelete(id, {
-      new: true,
-    });
+    // 1. Product খুঁজে বের করো
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // 2. যদি image থাকে তবে delete করো
+    if (product.img) {
+      const oldPath = path.join(process.cwd(), "uploads", product.img);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath); // পুরানো image delete
+      }
+    }
+
+    // 3. Database থেকে product delete
+    await Product.findByIdAndDelete(id);
 
     res.status(200).json({
-      sussecc: true,
-      message: "Delete a single product  successfully ..!",
+      success: true,
+      message: "Product and its image deleted successfully!",
     });
   } catch (error) {
     console.log(error);
     res.status(400).json({
       success: false,
-      message: "Product not Found!",
-      error: error.errors,
+      message: "Something went wrong!",
+      error: error.message,
     });
   }
 });

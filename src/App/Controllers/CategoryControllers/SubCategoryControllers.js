@@ -1,36 +1,49 @@
 import express from "express";
 import SubCategory from "../../Model/CategoryModel/SubCategoryModel.js";
-
+import { upload } from "../../../middleware/upload.js";
+import fs from "fs";
+import path from "path";
 export const subCategoryRouter = express.Router();
 
 // Create main category
-subCategoryRouter.post("/subCategoryes", async (req, res) => {
-  const reqBody = req?.body;
+subCategoryRouter.post(
+  "/subCategoryes",
+  upload.single("icon"),
+  async (req, res) => {
+    const { name, mainCategory } = req.body;
+    const icon = req.file ? req.file.filename : null;
 
-  try {
-    const category = new SubCategory(reqBody);
+    const formData = {
+      name,
+      icon,
+      mainCategory,
+    };
 
-    await category.save();
+    try {
+      const category = new SubCategory(formData);
 
-    res.status(201).json({
-      success: true,
-      message: "Category added successfully!",
-      // data: product,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add Category",
-      error: error.message,
-    });
+      await category.save();
+
+      res.status(201).json({
+        success: true,
+        message: "Category added successfully!",
+        // data: product,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to add Category",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 // Get main category
 subCategoryRouter.get("/subCategoryes", async (req, res) => {
   try {
-    const category = await SubCategory.find();
+    const category = await SubCategory.find().populate("mainCategory", "name");
 
     res.status(201).json({
       success: true,
@@ -70,34 +83,76 @@ subCategoryRouter.get("/subCategoryes/:id", async (req, res) => {
 });
 
 // update main category
-subCategoryRouter.put("/subCategoryes/:id", async (req, res) => {
-  const { id } = req.params;
-  const updateBody = req.body;
+subCategoryRouter.put(
+  "/subCategoryes/:id",
+  upload.single("icon"),
+  async (req, res) => {
+    const { id } = req.params;
+    const { name, mainCategory } = req.body;
+    const image = req.file ? req.file.filename : null;
 
-  try {
-    const category = await SubCategory.findByIdAndUpdate(id, updateBody);
+    try {
+      // 1. পুরানো category খুঁজে বের করো
+      const oldCategory = await SubCategory.findById(id);
+      if (!oldCategory) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Category not found" });
+      }
 
-    res.status(201).json({
-      success: true,
-      message: "Category update successfully!",
-      data: category,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add Category",
-      error: error.message,
-    });
+      // 2. নতুন image থাকলে পুরানো image delete করো
+      if (image && oldCategory.icon) {
+        const oldPath = path.join(process.cwd(), "uploads", oldCategory.icon);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath); // পুরানো ফাইল delete
+        }
+      }
+
+      // 3. Update body তৈরি করো
+      const updateBody = {
+        name: name || oldCategory.name,
+        icon: image || oldCategory.icon, // যদি নতুন image না আসে তাহলে পুরানোটাই রাখবে
+        mainCategory: mainCategory || oldCategory?.mainCategory,
+      };
+
+      const category = await SubCategory.findByIdAndUpdate(id, updateBody);
+
+      res.status(201).json({
+        success: true,
+        message: "Category update successfully!",
+        data: category,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to add Category",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 // Delete main category
 subCategoryRouter.delete("/subCategoryes/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await SubCategory.findByIdAndDelete(id);
+    // 1. DB থেকে category খুঁজে আনো
+    const category = await SubCategory.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    // 2. Image path বের করো
+    const imagePath = path.join(process.cwd(), "uploads", category?.icon);
+
+    // 3. ফাইল আছে কিনা check করে delete করো
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+
+    await SubCategory.findByIdAndDelete(id);
 
     res.status(201).json({
       success: true,

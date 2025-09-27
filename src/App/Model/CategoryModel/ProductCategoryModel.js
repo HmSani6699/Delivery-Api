@@ -10,6 +10,9 @@ const ProductCategorySchema = new Schema(
       unique: true,
       trim: true,
     },
+    icon: {
+      type: String, // Optional icon/image for the category
+    },
     mainCategory: {
       type: Schema.Types.ObjectId,
       ref: "MainCategory",

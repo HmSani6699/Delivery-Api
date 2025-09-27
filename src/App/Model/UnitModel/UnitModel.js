@@ -8,21 +8,21 @@ const unitSchema = new Schema(
       unique: true,
       trim: true,
     },
-    mainCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "MainCategory",
-      required: true,
-    },
-    subCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "SubCategory",
-      required: true,
-    },
-    productCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "ProductCategory",
-      required: true,
-    },
+    // mainCategory: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "MainCategory",
+    //   required: true,
+    // },
+    // subCategory: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "SubCategory",
+    //   required: true,
+    // },
+    // productCategory: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "ProductCategory",
+    //   required: true,
+    // },
     isActive: {
       type: Boolean,
       default: true,
