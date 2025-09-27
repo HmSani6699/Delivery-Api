@@ -251,6 +251,7 @@ productRouter.put(
       defaultUnit,
       variants,
       phone,
+      status,
     } = req.body;
 
     // যদি নতুন image থাকে
@@ -287,6 +288,7 @@ productRouter.put(
         defaultUnit,
         variants,
         phone,
+        status,
         img: finalImage, // ✅ পুরানো বা নতুন যেটা valid
       };
 
@@ -350,13 +352,13 @@ productRouter.delete("/products/:productId", async (req, res) => {
   }
 });
 
-// Get Restaurant item
-productRouter.get("/restaurantsItems", async (req, res) => {
+// Get All populer items
+productRouter.get("/allPopulerItems", async (req, res) => {
   try {
-    const { productCategory } = req.query;
-
     // Step 1: Find "Restaurant" main category
-    const mainCategory = await MainCategory.findOne({ name: "Restaurant" });
+    const mainCategory = await MainCategory.findOne({
+      name: "রেস্তোরাঁর খাবার",
+    });
     if (!mainCategory) {
       return res.status(404).json({
         success: false,
@@ -364,30 +366,92 @@ productRouter.get("/restaurantsItems", async (req, res) => {
       });
     }
 
-    // Step 2: Build filter
-    const filter = {
+    let filter = {
       category: mainCategory._id,
       status: "active",
     };
 
-    if (productCategory) {
-      filter.productCategory = productCategory; // filter by productCategory name
-    }
-
-    // Step 3: Get products
-    const products = await Product.find(filter).populate("shop", "name logo");
-
-    // Step 4: Get used productCategory list from Product model
-    const usedCategories = await Product.distinct("productCategory", {
-      category: mainCategory._id,
-      status: "active",
-    });
+    const products = await Product.aggregate([
+      { $match: filter }, // তোমার filter condition
+      {
+        $lookup: {
+          from: "shops", // Shop collection নাম (schema তে model নাম ছোট হাতের plural হয়)
+          localField: "shop",
+          foreignField: "_id",
+          as: "shop",
+        },
+      },
+      { $unwind: "$shop" },
+      {
+        $group: {
+          _id: "$shop._id",
+          shopName: { $first: "$shop.name" },
+          totalProducts: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          shopName: 1,
+          totalProducts: 1,
+        },
+      },
+    ]);
 
     res.status(200).json({
       success: true,
       message: "Get all products successfully!",
       data: products,
-      usedProductCategories: usedCategories, // ⬅️ This is your needed tab list
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(400).json({
+      success: false,
+      message: "Product not Found!",
+      error: error.message,
+    });
+  }
+});
+
+// Get Restaurant item
+productRouter.get("/populerItems", async (req, res) => {
+  const { name, search } = req.query;
+
+  try {
+    // Step 1: Find "Restaurant" main category
+    const mainCategory = await MainCategory.findOne({
+      name: "রেস্তোরাঁর খাবার",
+    });
+    if (!mainCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant main category not found",
+      });
+    }
+
+    // base filter
+    let filter = {
+      category: mainCategory._id,
+      status: "active",
+    };
+
+    // name দিয়ে filter
+    if (name) {
+      filter.name = name;
+    }
+
+    // search দিয়ে filter (partial match)
+    if (search) {
+      filter.name = { $regex: search, $options: "i" };
+    }
+
+    const products = await Product.find(filter).populate("shop", "name logo");
+
+    res.status(200).json({
+      success: true,
+      message: "Get all products successfully!",
+      data: products,
     });
   } catch (error) {
     console.log(error);
