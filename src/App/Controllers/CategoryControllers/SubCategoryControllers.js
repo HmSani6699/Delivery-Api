@@ -3,6 +3,8 @@ import SubCategory from "../../Model/CategoryModel/SubCategoryModel.js";
 import { upload } from "../../../middleware/upload.js";
 import fs from "fs";
 import path from "path";
+import Product from "../../Model/ProductModel/ProductModel.js";
+import MainCategory from "../../Model/CategoryModel/MainCategoryModel.js";
 export const subCategoryRouter = express.Router();
 
 // Create main category
@@ -198,3 +200,55 @@ subCategoryRouter.get(
     }
   }
 );
+
+// Get all subgategory
+// Get subcategory name with total products count
+subCategoryRouter.get("/subcategoryProductsCount", async (req, res) => {
+  try {
+    // ১. MainCategory থেকে id বের করা
+    const mainCat = await MainCategory.findOne({ name: "বাজার আইটেম" });
+    if (!mainCat) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Main category not found" });
+    }
+
+    const mainCatId = mainCat._id;
+
+    // ২. SubCategory aggregation
+    const result = await SubCategory.aggregate([
+      {
+        $match: { mainCategory: mainCatId }, // ObjectId match
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id", // SubCategory _id
+          foreignField: "subCategory", // Product.subCategory (should be ObjectId)
+          as: "products",
+        },
+      },
+      {
+        $addFields: {
+          totalItems: { $size: "$products" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          icon: 1,
+          totalItems: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});

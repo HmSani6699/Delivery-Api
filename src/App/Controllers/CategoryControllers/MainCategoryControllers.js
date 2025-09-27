@@ -81,33 +81,6 @@ mainCategoryRouter.get("/mainCategoryes/:id", async (req, res) => {
 });
 
 // update main category
-// mainCategoryRouter.put(
-//   "/mainCategoryes/:id",
-//   upload.single("icon"),
-//   async (req, res) => {
-//     const { id } = req.params;
-//      const { name } = req.body;
-//      const image = req.file ? req.file.filename : null;
-
-//     try {
-//       const category = await MainCategory.findByIdAndUpdate(id, updateBody);
-
-//       res.status(201).json({
-//         success: true,
-//         message: "Category update successfully!",
-//         data: category,
-//       });
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).json({
-//         success: false,
-//         message: "Failed to add Category",
-//         error: error.message,
-//       });
-//     }
-//   }
-// );
-
 mainCategoryRouter.put(
   "/mainCategoryes/:id",
   upload.single("icon"),
@@ -193,6 +166,143 @@ mainCategoryRouter.delete("/mainCategoryes/:id", async (req, res) => {
       success: true,
       message: "Category delete successfully!",
       data: category,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to add Category",
+      error: error.message,
+    });
+  }
+});
+
+// Get all categoryes
+mainCategoryRouter.get("/allCategories", async (req, res) => {
+  try {
+    // const categories = await MainCategory.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: "subcategories",
+    //       localField: "_id",
+    //       foreignField: "mainCategory",
+    //       as: "sub_categories",
+    //       pipeline: [
+    //         {
+    //           $lookup: {
+    //             from: "productcategories",
+    //             localField: "_id",
+    //             foreignField: "subCategory",
+    //             as: "productCategories",
+    //             pipeline: [
+    //               {
+    //                 $lookup: {
+    //                   from: "products", // ধরলাম তোমার product collection-এর নাম products
+    //                   localField: "_id",
+    //                   foreignField: "productCategory",
+    //                   as: "products",
+    //                 },
+    //               },
+    //               {
+    //                 $addFields: {
+    //                   totalItem: { $size: "$products" },
+    //                 },
+    //               },
+    //               {
+    //                 $project: {
+    //                   _id: 0,
+    //                   name: 1,
+    //                   image: "$icon",
+    //                   totalItem: 1,
+    //                 },
+    //               },
+    //             ],
+    //           },
+    //         },
+    //         {
+    //           $project: {
+    //             _id: 0,
+    //             name: 1,
+    //             image: "$icon",
+    //             productCategories: 1,
+    //           },
+    //         },
+    //       ],
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       main_category: "$name",
+    //       image: "$icon",
+    //       sub_categories: 1,
+    //     },
+    //   },
+    // ]);
+
+    const categories = await MainCategory.aggregate([
+      {
+        $lookup: {
+          from: "subcategories",
+          localField: "_id",
+          foreignField: "mainCategory",
+          as: "sub_categories",
+          pipeline: [
+            {
+              $lookup: {
+                from: "productcategories",
+                localField: "_id",
+                foreignField: "subCategory",
+                as: "productCategories",
+                pipeline: [
+                  {
+                    $lookup: {
+                      from: "products",
+                      localField: "name", // 👈 match by name
+                      foreignField: "productCategory", // productSchema তে string
+                      as: "products",
+                    },
+                  },
+                  {
+                    $addFields: {
+                      totalItem: { $size: "$products" },
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      name: 1,
+                      image: "$icon",
+                      totalItem: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                name: 1,
+                image: "$icon",
+                productCategories: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          main_category: "$name",
+          image: "$icon",
+          sub_categories: 1,
+        },
+      },
+    ]);
+    res.status(201).json({
+      success: true,
+      message: "Category get successfully!",
+      data: categories,
     });
   } catch (error) {
     console.error(error);
