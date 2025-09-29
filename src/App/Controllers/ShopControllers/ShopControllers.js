@@ -6,6 +6,7 @@ import { upload } from "../../../middleware/upload.js";
 import fs from "fs";
 import path from "path";
 import Product from "../../Model/ProductModel/ProductModel.js";
+import mongoose from "mongoose";
 
 export const shopRouter = express.Router();
 
@@ -154,10 +155,10 @@ shopRouter.get("/allShops", async (req, res) => {
 shopRouter.get("/shops/:shopId", async (req, res) => {
   const id = req.params.shopId;
   try {
-    const shop = await Shop.findById(id);
+    const shop = await Shop.findById(id).select("name logo coverImage");
 
     res.status(200).json({
-      sussecc: true,
+      success: true,
       message: "Get a single shop  successfully ..!",
       data: shop,
     });
@@ -167,6 +168,52 @@ shopRouter.get("/shops/:shopId", async (req, res) => {
       success: false,
       message: "Shop not Found!",
       error: error.errors,
+    });
+  }
+});
+// Get a single Shop tab button value
+shopRouter.get("/shopTabButton/:shopId", async (req, res) => {
+  const id = req.params.shopId;
+
+  // Optional: Validate ObjectId first
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Shop ID",
+    });
+  }
+
+  try {
+    // 1. Shop খুঁজে বের করো
+    const shop = await Shop.findById(id).select("name logo coverImage");
+
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found",
+      });
+    }
+
+    // 2. ওই Shop-এর প্রোডাক্ট আনো
+    const shopTab = await Product.find({
+      shop: shop._id,
+    }).select("name");
+
+    // 3. Response পাঠাও
+    res.status(200).json({
+      success: true,
+      message: "Shop and its products fetched successfully!",
+      data: {
+        products: shopTab,
+      },
+    });
+  } catch (error) {
+    console.error("Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong!",
+      error: error?.message || error,
     });
   }
 });

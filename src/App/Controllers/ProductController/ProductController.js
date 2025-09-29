@@ -478,3 +478,43 @@ productRouter.get("/filterGroceryItems", async (req, res) => {
     });
   }
 });
+
+//single restaurent items
+productRouter.get("/singleRestaurentItems", async (req, res) => {
+  const { shopId } = req.query;
+  const { itemName } = req.query;
+
+  try {
+    let filter;
+
+    if (shopId) {
+      filter = {
+        shop: shopId,
+      };
+    }
+
+    if (itemName) {
+      filter = {
+        name: itemName,
+        shop: shopId,
+      };
+    }
+
+    const product = await Product.find(filter);
+
+    // 3. Response পাঠাও
+    res.status(200).json({
+      success: true,
+      message: "Shop and its products fetched successfully!",
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong!",
+      error: error?.message || error,
+    });
+  }
+});
