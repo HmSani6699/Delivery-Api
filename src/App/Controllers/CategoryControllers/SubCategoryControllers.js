@@ -201,7 +201,6 @@ subCategoryRouter.get(
   }
 );
 
-// Get all subgategory
 // Get subcategory name with total products count
 subCategoryRouter.get("/subcategoryProductsCount", async (req, res) => {
   try {

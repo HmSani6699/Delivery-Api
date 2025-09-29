@@ -3,6 +3,10 @@ import ProductCategory from "../../Model/CategoryModel/ProductCategoryModel.js";
 import { upload } from "../../../middleware/upload.js";
 import fs from "fs";
 import path from "path";
+import SubCategory from "../../Model/CategoryModel/SubCategoryModel.js";
+import Product from "../../Model/ProductModel/ProductModel.js";
+import MainCategory from "../../Model/CategoryModel/MainCategoryModel.js";
+import mongoose from "mongoose";
 
 export const productCategoryRouter = express.Router();
 
@@ -203,3 +207,77 @@ productCategoryRouter.get(
     }
   }
 );
+
+productCategoryRouter.get("/grocerySubCategoryProducts", async (req, res) => {
+  try {
+    const { subCategoryName } = req.query;
+
+    if (!subCategoryName) {
+      return res
+        .status(400)
+        .json({ success: false, message: "SubCategory name required" });
+    }
+
+    // Step 1: SubCategory check
+    const subCategory = await SubCategory.findOne({ name: subCategoryName });
+    if (!subCategory) {
+      const mainCategory = await MainCategory.findOne({
+        name: "বাজার আইটেম",
+      });
+
+      const product = await Product.find({
+        category: new mongoose.Types.ObjectId(mainCategory._id),
+        name: { $regex: subCategoryName, $options: "i" },
+      });
+
+      if (product) {
+        return res.status(200).json({
+          success: true,
+          categories: product,
+        });
+      } else if (!product) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
+      }
+
+      return res
+        .status(404)
+        .json({ success: false, message: "SubCategory not found" });
+    }
+
+    // Step 2: Get all ProductCategory under this SubCategory
+    const productCategories = await ProductCategory.find({
+      subCategory: subCategory._id,
+    });
+
+    // Step 3: For each ProductCategory, count products
+    const result = [];
+    for (let category of productCategories) {
+      const count = await Product.countDocuments({
+        subCategory: subCategory._id,
+        productCategory: category._id,
+        status: "active",
+      });
+
+      // Step 4: Only include if product exists
+      if (count > 0) {
+        result.push({
+          categoryId: category._id,
+          name: category.name,
+          totalItems: count,
+          icon: category.icon,
+        });
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      subCategory: subCategory.name,
+      categories: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+});

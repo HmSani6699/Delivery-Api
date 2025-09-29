@@ -6,6 +6,8 @@ import MainCategory from "../../Model/CategoryModel/MainCategoryModel.js";
 import { upload } from "../../../middleware/upload.js";
 import fs from "fs";
 import path from "path";
+import SubCategory from "../../Model/CategoryModel/SubCategoryModel.js";
+import mongoose from "mongoose";
 
 export const productRouter = express.Router();
 
@@ -430,9 +432,11 @@ productRouter.get("/populerItems", async (req, res) => {
       });
     }
 
+    console.log("get main ctegory", mainCategory?._id);
+
     // base filter
     let filter = {
-      category: mainCategory._id,
+      category: new mongoose.Types.ObjectId(mainCategory._id),
       status: "active",
     };
 
@@ -451,6 +455,97 @@ productRouter.get("/populerItems", async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Get all products successfully!",
+      data: products,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(400).json({
+      success: false,
+      message: "Product not Found!",
+      error: error.message,
+    });
+  }
+});
+
+// Get grocery item
+productRouter.get("/allGroceryItems", async (req, res) => {
+  const { name } = req.query;
+
+  try {
+    // Step 1: Find "Restaurant" main category
+    const subCategory = await SubCategory.findOne({
+      name: name,
+    });
+    if (!subCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant sub category not found",
+      });
+    }
+
+    // base filter
+    let filter = {
+      subCategory: subCategory._id,
+      status: "active",
+    };
+
+    const products = await Product.find(filter)
+      .select("name productCategory") // শুধু Product এর name আর productCategory আসবে
+      .populate("productCategory", "name icon"); // শুধু ProductCategory এর name আসবে
+
+    // total count
+    const totalProducts = await Product.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      message: "Get all products successfully!",
+      totalProducts: totalProducts,
+      data: products,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(400).json({
+      success: false,
+      message: "Product not Found!",
+      error: error.message,
+    });
+  }
+});
+
+// Get grocery item
+productRouter.get("/filterGroceryItems", async (req, res) => {
+  const { categoryName, itemName } = req.query;
+
+  try {
+    // Step 1: Find "Restaurant" main category
+    const subCategory = await SubCategory.findOne({
+      name: categoryName,
+    });
+    if (!subCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant sub category not found",
+      });
+    }
+
+    // base filter
+    let filter = {
+      subCategory: subCategory._id,
+      name: { $regex: itemName, $options: "i" },
+      status: "active",
+    };
+
+    const products = await Product.find(filter); // শুধু ProductCategory এর name আসবে
+
+    // total count
+    const totalProducts = await Product.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      message: "Get all products successfully!",
+      totalProducts: totalProducts,
       data: products,
     });
   } catch (error) {

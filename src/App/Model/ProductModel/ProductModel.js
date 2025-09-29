@@ -3,9 +3,20 @@ import { Schema, model } from "mongoose";
 const productSchema = new Schema(
   {
     name: { type: String, required: true }, // পণ্যের নাম
-    category: { type: String, required: true }, // e.g. Food, Grocery
-    subCategory: { type: String }, // optional
-    productCategory: { type: String }, // optional
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: "MainCategory",
+      required: true,
+    }, // e.g. Food, Grocery
+    subCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "SubCategory",
+      required: true,
+    }, // optional
+    productCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "ProductCategory",
+    },
     defaultUnit: { type: String, required: true }, // e.g. piece, plate, kg
     variants: [
       {
