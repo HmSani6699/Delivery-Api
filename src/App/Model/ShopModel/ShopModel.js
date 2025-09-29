@@ -32,9 +32,8 @@ const shopSchema = new Schema(
     },
 
     sharePricing: {
-      type: Map,
-      of: String,
-      required: false,
+      type: Object,
+      required: true,
     },
   },
   { timestamps: true }

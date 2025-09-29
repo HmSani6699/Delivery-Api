@@ -161,85 +161,7 @@ productRouter.get("/products/:productId", async (req, res) => {
   }
 });
 
-// Update a single Products
-// productRouter.put(
-//   "/products/:productId",
-//   upload.single("img"),
-//   async (req, res) => {
-//     const id = req.params.productId;
-//     const {
-//       name,
-//       category,
-//       subCategory,
-//       productCategory,
-//       defaultUnit,
-//       variants,
-//       phone,
-//     } = req.body;
-
-//     const img = req.file ? req.file.filename : null;
-
-//     try {
-//       // Step 2: User এর shop খুঁজো
-
-//       // const getShop = await Shop.findOne({ owner: getUser._id });
-//       // if (!getShop) {
-//       //   return res.status(404).json({
-//       //     success: false,
-//       //     message: "Shop not found for this user",
-//       //   });
-//       // }
-
-//       // 1. পুরানো product খুঁজে বের করো
-//       const oldProduct = await Product.findById(id);
-//       if (!oldProduct) {
-//         return res
-//           .status(404)
-//           .json({ success: false, message: "Product not found" });
-//       }
-
-//       // 2. নতুন image থাকলে পুরানো image delete করো
-//       if (img && oldProduct.img) {
-//         const oldPath = path.join(process.cwd(), "uploads", oldProduct.img);
-//         if (fs.existsSync(oldPath)) {
-//           fs.unlinkSync(oldPath); // পুরানো ফাইল delete
-//         }
-//       }
-
-//       const formData = {
-//         name,
-//         category,
-//         subCategory,
-//         productCategory,
-//         defaultUnit,
-//         variants,
-//         phone,
-//         img,
-//         // shop: getShop._id,
-//       };
-
-//       // const product = await Product.findByIdAndUpdate(id, formData, {
-//       //   new: true,
-//       // });
-
-//       console.log(formData);
-
-//       res.status(200).json({
-//         success: true,
-//         message: "Update a single product  successfully ..!",
-//         product: product,
-//       });
-//     } catch (error) {
-//       console.log(error);
-//       res.status(400).json({
-//         success: false,
-//         message: "Product not Found!",
-//         error: error.errors,
-//       });
-//     }
-//   }
-// );
-
+// update
 productRouter.put(
   "/products/:productId",
   upload.single("img"),
@@ -431,8 +353,6 @@ productRouter.get("/populerItems", async (req, res) => {
         message: "Restaurant main category not found",
       });
     }
-
-    console.log("get main ctegory", mainCategory?._id);
 
     // base filter
     let filter = {
