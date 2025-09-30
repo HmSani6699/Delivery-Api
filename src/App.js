@@ -9,6 +9,7 @@ import { productCategoryRouter } from "./App/Controllers/CategoryControllers/Pro
 import { unitRouter } from "./App/Controllers/UnitControllers/UnitControllers.js";
 import path from "path";
 import { populerSearchRouter } from "./App/Controllers/SearchControllers/PopulerSearchControllers.js";
+import { orderRouter } from "./App/Controllers/OrderControllers/OrderControllers.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api", subCategoryRouter);
 app.use("/api", productCategoryRouter);
 app.use("/api", unitRouter);
 app.use("/api", populerSearchRouter);
+app.use("/api", orderRouter);
 
 // এইটা কাজ করবে: http://localhost:3000/
 app.get("/", (req, res) => {

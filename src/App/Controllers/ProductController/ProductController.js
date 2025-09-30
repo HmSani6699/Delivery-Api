@@ -518,3 +518,42 @@ productRouter.get("/singleRestaurentItems", async (req, res) => {
     });
   }
 });
+
+// Get all filter and search  Products
+productRouter.get("/searchProduct", async (req, res) => {
+  const name = req.query.productName?.trim();
+
+  try {
+    if (!name) {
+      return res.status(200).json({
+        success: true,
+        message: "No product name provided!",
+        data: [],
+      });
+    }
+
+    const products = await Product.find({
+      $or: [
+        // Exact match (case-insensitive)
+        { name: { $regex: `^${name}$`, $options: "i" } },
+
+        // Partial match (case-insensitive)
+        { name: { $regex: name, $options: "i" } },
+      ],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Get all products successfully ..!",
+      data: products,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(400).json({
+      success: false,
+      message: "Product not Found!",
+      error: error?.message,
+    });
+  }
+});
