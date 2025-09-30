@@ -281,3 +281,33 @@ productCategoryRouter.get("/grocerySubCategoryProducts", async (req, res) => {
     return res.status(500).json({ success: false, message: "Server Error" });
   }
 });
+
+// Get product  category by tab button
+productCategoryRouter.get("/productCategoryByTabButton", async (req, res) => {
+  const { categoryName } = req.query;
+
+  try {
+    const category = await ProductCategory.findOne({
+      name: { $regex: categoryName, $options: "i" },
+    }).select("_id name");
+
+    const products = await Product.find({
+      productCategory: category._id,
+    })
+      .select("_id name img variants")
+      .populate("productCategory", "name");
+
+    res.status(201).json({
+      success: true,
+      message: "Category get successfully!",
+      data: products,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to add Category",
+      error: error.message,
+    });
+  }
+});
