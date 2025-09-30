@@ -28,7 +28,10 @@ const unitSchema = new Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    versionKey: false,
+  }
 );
 
 const Unit = model("Unit", unitSchema);

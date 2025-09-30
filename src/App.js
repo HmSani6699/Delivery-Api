@@ -7,8 +7,8 @@ import { mainCategoryRouter } from "./App/Controllers/CategoryControllers/MainCa
 import { subCategoryRouter } from "./App/Controllers/CategoryControllers/SubCategoryControllers.js";
 import { productCategoryRouter } from "./App/Controllers/CategoryControllers/ProductCategoryControllers.js";
 import { unitRouter } from "./App/Controllers/UnitControllers/UnitControllers.js";
-import { upload } from "./middleware/upload.js";
 import path from "path";
+import { populerSearchRouter } from "./App/Controllers/SearchControllers/PopulerSearchControllers.js";
 
 const app = express();
 
@@ -25,6 +25,7 @@ app.use("/api", shopRouter);
 app.use("/api", subCategoryRouter);
 app.use("/api", productCategoryRouter);
 app.use("/api", unitRouter);
+app.use("/api", populerSearchRouter);
 
 // এইটা কাজ করবে: http://localhost:3000/
 app.get("/", (req, res) => {
