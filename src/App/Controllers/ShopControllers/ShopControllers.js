@@ -7,6 +7,8 @@ import fs from "fs";
 import path from "path";
 import Product from "../../Model/ProductModel/ProductModel.js";
 import mongoose from "mongoose";
+import ShopOrder from "../../Model/OrderModel/ShopOrderSchema.js";
+import Order from "../../Model/OrderModel/OrderModel.js";
 
 export const shopRouter = express.Router();
 
@@ -346,3 +348,148 @@ shopRouter.delete("/shops/:shopId", async (req, res) => {
     });
   }
 });
+
+// GET all orders for a shop
+shopRouter.get("/shop/:phone/orders", async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const { date, status } = req.query;
+
+    // Find user by phone number
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Find shops owned by this user
+    const shops = await Shop.find({ owner: user._id }); // user._id is ObjectId already
+
+    if (!shops.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No shops found for user" });
+    }
+
+    // Extract all shop IDs
+    const shopIds = shops.map((shop) => shop._id);
+
+    let filter;
+
+    // যদি date না থাকে, default আজকের date
+    const today = new Date();
+    const selectedDate = date
+      ? new Date(`${date}T00:00:00.000Z`)
+      : new Date(today.toISOString().split("T")[0] + "T00:00:00.000Z");
+
+    const startOfDay = new Date(selectedDate);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    if (date && status) {
+      // date + specific status
+      filter = {
+        shopId: { $in: shopIds },
+        status: status,
+        createdAt: { $gte: startOfDay, $lte: endOfDay },
+      };
+    } else if (date && !status) {
+      // শুধু তারিখ অনুযায়ী সব status
+      filter = {
+        shopId: { $in: shopIds },
+        createdAt: { $gte: startOfDay, $lte: endOfDay },
+      };
+    } else {
+      // default pending + আজকের তারিখ
+      filter = {
+        shopId: { $in: shopIds },
+        status: "pending",
+        createdAt: { $gte: startOfDay, $lte: endOfDay },
+      };
+    }
+
+    // Find orders for any of these shops
+    const shopOrders = await ShopOrder.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("orderId", "orderNumber deliveryInfo payment status")
+      .exec();
+
+    res.json({
+      success: true,
+      orders: shopOrders,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch shop orders",
+      error: err.message,
+    });
+  }
+});
+
+// ShopOrder status update API
+shopRouter.put("/shop-orders/:shopOrderId/status", async (req, res) => {
+  try {
+    const { shopOrderId } = req.params;
+    const { status } = req.body;
+
+    const shopOrder = await ShopOrder.findByIdAndUpdate(
+      shopOrderId,
+      { status },
+      { new: true }
+    );
+
+    if (!shopOrder)
+      return res
+        .status(404)
+        .json({ success: false, message: "Shop order not found" });
+
+    // Main order auto update
+    await updateMainOrderStatus(shopOrder.orderId);
+
+    res.json({
+      success: true,
+      message: "Shop order status updated",
+      shopOrder,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update shop order",
+      error: err.message,
+    });
+  }
+});
+
+async function updateMainOrderStatus(orderId) {
+  const shopOrders = await ShopOrder.find({ orderId });
+
+  const statuses = shopOrders.map((s) => s.status);
+
+  let newStatus = "pending";
+
+  if (statuses.every((s) => s === "cancelled")) {
+    newStatus = "cancelled";
+  } else if (statuses.every((s) => s === "delivered")) {
+    newStatus = "delivered";
+  } else if (
+    statuses.includes("confirmed") ||
+    statuses.includes("preparing") ||
+    statuses.includes("out_for_delivery")
+  ) {
+    if (statuses.includes("cancelled")) {
+      newStatus = "partially_confirmed"; // কিছু confirm, কিছু cancel
+    } else {
+      newStatus = "confirmed";
+    }
+  } else if (statuses.includes("delivered")) {
+    if (statuses.includes("cancelled") || statuses.includes("pending")) {
+      newStatus = "partially_delivered";
+    } else {
+      newStatus = "delivered";
+    }
+  }
+
+  await Order.findByIdAndUpdate(orderId, { status: newStatus });
+}

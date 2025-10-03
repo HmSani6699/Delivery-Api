@@ -2,48 +2,6 @@ import mongoose from "mongoose";
 
 import { Schema, model } from "mongoose";
 
-// Order item schema
-const OrderItemSchema = new Schema(
-  {
-    productId: {
-      type: Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
-    productName: {
-      type: String,
-      required: true,
-    },
-    img: {
-      type: String,
-      required: true,
-    },
-    variantId: {
-      type: Schema.Types.ObjectId,
-      ref: "Variant",
-      required: false,
-    },
-    variantName: {
-      type: String,
-      default: "",
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    pricePerUnit: {
-      type: Number,
-      required: true,
-    },
-    totalPrice: {
-      type: Number,
-      required: true,
-    },
-  },
-  { _id: false }
-);
-
 //  Delevey info schema
 const DeliveryInfoSchema = new Schema(
   {
@@ -112,19 +70,15 @@ const OrderSchema = new Schema({
   status: {
     type: String,
     enum: [
-      "pending",
-      "confirmed",
+      "pending", // যখন order place হলো
+      "partially_accepted", // কিছু shop accept করলো, কিছু করলো না
+      "confirmed", // সব shop accept করলো
       "preparing",
       "out_for_delivery",
       "delivered",
       "cancelled",
     ],
     default: "pending",
-  },
-  items: {
-    type: [OrderItemSchema],
-    required: true,
-    validate: [(arr) => arr.length > 0, "At least one item is required"],
   },
   subtotal: {
     type: Number,
@@ -153,6 +107,10 @@ const OrderSchema = new Schema({
   },
   deliveryInfo: DeliveryInfoSchema,
   payment: PaymentInfoSchema,
+
+  // important: প্রতিটা shop order এর সাথে relation রাখছি
+  shopOrders: [{ type: Schema.Types.ObjectId, ref: "ShopOrder" }],
+
   notes: {
     type: String,
     default: "",
