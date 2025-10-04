@@ -56,66 +56,72 @@ const PaymentInfoSchema = new Schema(
 );
 
 // final order schema
-const OrderSchema = new Schema({
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  orderNumber: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  status: {
-    type: String,
-    enum: [
-      "pending", // যখন order place হলো
-      "partially_accepted", // কিছু shop accept করলো, কিছু করলো না
-      "confirmed", // সব shop accept করলো
-      "preparing",
-      "out_for_delivery",
-      "delivered",
-      "cancelled",
-    ],
-    default: "pending",
-  },
-  subtotal: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
-  deliveryFee: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-  discount: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-  totalAmount: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
-  deliveryType: {
-    type: String,
-    enum: ["home", "pickup"],
-    default: "home",
-  },
-  deliveryInfo: DeliveryInfoSchema,
-  payment: PaymentInfoSchema,
+const OrderSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    status: {
+      type: String,
+      enum: [
+        "pending", // যখন order place হলো
+        "partially_accepted", // কিছু shop accept করলো, কিছু করলো না
+        "confirmed", // সব shop accept করলো
+        "preparing",
+        "out_for_delivery",
+        "delivered",
+        "cancelled",
+      ],
+      default: "pending",
+    },
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    deliveryType: {
+      type: String,
+      enum: ["home", "pickup"],
+      default: "home",
+    },
+    deliveryInfo: DeliveryInfoSchema,
+    payment: PaymentInfoSchema,
 
-  // important: প্রতিটা shop order এর সাথে relation রাখছি
-  shopOrders: [{ type: Schema.Types.ObjectId, ref: "ShopOrder" }],
+    // important: প্রতিটা shop order এর সাথে relation রাখছি
+    shopOrders: [{ type: Schema.Types.ObjectId, ref: "ShopOrder" }],
 
-  notes: {
-    type: String,
-    default: "",
+    notes: {
+      type: String,
+      default: "",
+    },
   },
-});
+  {
+    versionKey: false,
+    timestamps: true,
+  }
+);
 
 const Order = model("Order", OrderSchema);
 
